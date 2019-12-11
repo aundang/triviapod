@@ -1,0 +1,7 @@
+.User {
+  margin: 20px 0;
+}
+
+.User input[type='text'] {
+  margin-left: 10px;
+}
