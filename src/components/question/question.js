@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import './question.css';
 import randomQuestion from '../../utils/randomQuestion';
 import Remarks from '../remarks/remarks';
+import { connect } from 'react-redux';
+import * as actionTypes from '../../store/actions';
 
-const Question = () => {
+const Question = props => {
   const [question, setQuestion] = useState({});
   const [answer, setAnswer] = useState(-1);
   const [answerDetails, setAnswerDetails] = useState('');
   const [alias, setAlias] = useState('');
+  const [inputStyle, setInputStyle] = useState({ border: 'gray solid 1px' });
+  const [isCorrect, setIsCorrect] = useState(false);
 
   useEffect(() => {
     randomQuestion().then(response => {
@@ -15,23 +19,59 @@ const Question = () => {
     });
   }, []);
 
+  useEffect(() => {
+    if (alias) {
+      fetch(`http://localhost:53375/results/users/${alias}`)
+        .then(response => response.json())
+        .then(data => {
+          props.loadAttempts(data);
+        });
+    }
+  }, [alias, props]);
+
   const handleAnswer = event => {
-    let isCorrect = false;
-    if (parseInt(answer) === parseInt(question.answer)) {
-      setAnswerDetails('Your answer is correct');
-      isCorrect = true;
+    if (alias) {
+      setInputStyle({ border: 'gray solid 1px' });
+      if (parseInt(answer) === parseInt(question.answer)) {
+        setAnswerDetails('Your answer is correct');
+        setIsCorrect(true);
+        randomQuestion().then(response => {
+          setQuestion(response);
+        });
+      } else {
+        setAnswerDetails('The answer is wrong. Please try again.');
+        setIsCorrect(false);
+      }
     } else {
-      setAnswerDetails('The answer is wrong. Please try again.');
+      setIsCorrect(false);
+      setInputStyle({ border: 'red solid 1px' });
+      setAnswerDetails('Name or Alias is needed. Please try again.');
     }
 
-    let payload = {
-      alias,
-      answered: question.choices[parseInt(answer)],
-      qId: question.id,
-      isCorrect
+    const payLoad = {
+      user: {
+        name: alias
+      },
+      answer: question.choices[parseInt(answer)],
+      quizId: question.id,
+      result: isCorrect
     };
 
-    console.log(payload);
+    // console.log('payload ', payLoad);
+    // console.log(JSON.stringify(payLoad));
+
+    fetch('http://localhost:53375/results/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payLoad)
+    })
+      .then(response => response.json())
+      .then(data => {
+        props.onAttempt(data);
+        console.log(data);
+      });
 
     event.preventDefault();
   };
@@ -50,33 +90,57 @@ const Question = () => {
             name="name"
             onChange={event => setAlias(event.target.value)}
             value={alias}
+            style={inputStyle}
+            placeholder="Please enter name/alias"
           />
         </div>
-        <label>{question.question}</label>
-        <div className="choices">
-          {question.choices ? (
-            question.choices.map((choice, index) => {
-              return (
-                <div key={index}>
-                  <input
-                    type="radio"
-                    name="site_name"
-                    value={index}
-                    onClick={handleChoices}
-                  />
-                  {choice}
-                </div>
-              );
-            })
-          ) : (
-            <span>Loading Questions ....</span>
-          )}
-        </div>
-        <input type="submit" value="Submit" />
-        <Remarks answerDetails={answerDetails} />
+        {alias ? (
+          <div>
+            <label>{question.question}</label>
+            <div className="choices">
+              {question.choices ? (
+                question.choices.map((choice, index) => {
+                  return (
+                    <div key={index}>
+                      <input
+                        className="radio-btn-choices"
+                        type="radio"
+                        name="site_name"
+                        value={index}
+                        onChange={handleChoices}
+                      />
+                      {choice}
+                    </div>
+                  );
+                })
+              ) : (
+                <span>Loading Questions ....</span>
+              )}
+            </div>
+            <input type="submit" value="Submit" />
+            <Remarks answerDetails={answerDetails} />
+          </div>
+        ) : (
+          <span className="required">Required</span>
+        )}
       </form>
     </div>
   );
 };
 
-export default Question;
+const mapDispatchToProps = dispatch => {
+  return {
+    onAttempt: attempt =>
+      dispatch({
+        type: actionTypes.ANSWER_QUESTION,
+        payload: attempt
+      }),
+    loadAttempts: attempts =>
+      dispatch({
+        type: actionTypes.SET_ATTEMPTS,
+        payload: attempts
+      })
+  };
+};
+
+export default connect(null, mapDispatchToProps)(Question);

@@ -4,4 +4,7 @@
 
 .User input[type='text'] {
   margin-left: 10px;
+  font-size: 14px;
+  padding: 4px;
+  outline: none;
 }

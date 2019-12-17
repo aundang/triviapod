@@ -22,8 +22,18 @@ input[type='submit'] {
 
 .User {
   margin: 20px 0;
+  display: inline-block;
 }
 
 .User input[type='text'] {
   margin-left: 10px;
+  font-size: 14px;
+  padding: 4px;
+  outline: none;
+  width: 160px;
+}
+
+.required {
+  color: red;
+  padding-left: 5px;
 }

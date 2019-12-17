@@ -32,21 +32,26 @@
 // ];
 
 const randomQuestions = async () => {
-  let response = await fetch('https://api.myjson.com/bins/11cla4');
-  //let response = await fetch('http://ambsg000031.local:8080/');
+  let response = await fetch('http://localhost:53375/questions');
   let data = await response.json();
 
   console.log(data);
 
-  const newQuestions = data.map(item => {
-    return {
-      ...item,
-      choices: item.choices.split('|')
-    };
-  });
+  const newData = {
+    ...data,
+    choices: data.choices.split('|')
+  };
 
-  let rand = Math.floor(Math.random() * newQuestions.length);
-  return newQuestions[rand];
+  console.log(newData);
+  return newData;
 };
 
+// function shuffle(o) {
+//   for (
+//     var j, x, i = o.length;
+//     i;
+//     j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x
+//   );
+//   return o;
+// }
 export default randomQuestions;
